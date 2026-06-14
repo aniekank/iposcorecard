@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Scoreboard — AI IPO Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#06070A;
+    --panel:#0E1118;
+    --panel2:#141925;
+    --green:#27E07A;       /* ticker up-green */
+    --green-d:#16A659;
+    --amber:#FFC23D;
+    --red:#FF5570;
+    --cyan:#46D9FF;
+    --paper:#F3F6FA;
+    --mute:#6E7686;
+    --line:#1E2533;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#000;font-family:'Archivo',sans-serif;color:var(--paper);display:flex;flex-direction:column;align-items:center;padding:40px 16px 80px;gap:34px;}
+  .meta{color:#6f7d90;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;text-align:center;max-width:640px;line-height:1.7;}
+  .slide{width:1080px;height:1080px;position:relative;overflow:hidden;background:var(--black);color:var(--paper);display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.6);}
+  .pad{padding:78px 80px;flex:1;display:flex;flex-direction:column;position:relative;z-index:2;}
+
+  /* faint ticker grid */
+  .grid{position:absolute;inset:0;z-index:0;background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% 56px;opacity:.5;}
+  .glow{position:absolute;width:760px;height:760px;border-radius:50%;filter:blur(150px);opacity:.18;z-index:0;}
+
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:17px;letter-spacing:.26em;text-transform:uppercase;color:var(--green);display:flex;gap:14px;align-items:center;}
+  .eyebrow .live{width:11px;height:11px;border-radius:50%;background:var(--green);box-shadow:0 0 14px var(--green);}
+  .counter{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:16px;letter-spacing:.14em;color:var(--mute);}
+
+  .anton{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;line-height:.9;letter-spacing:.005em;}
+  h2{font-family:'Space Grotesk',sans-serif;font-weight:700;line-height:1.04;letter-spacing:-.01em;}
+  .lede{font-family:'Space Grotesk',sans-serif;font-size:30px;line-height:1.5;color:#b6bdca;font-weight:400;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  strong{color:var(--green);font-weight:600;}
+
+  .footer{padding:24px 80px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);position:relative;z-index:2;}
+  .footer .name{color:var(--paper);font-weight:700;}
+
+  /* cover */
+  .cover .kicker{font-family:'JetBrains Mono',monospace;font-size:19px;letter-spacing:.22em;color:var(--amber);text-transform:uppercase;display:flex;align-items:center;gap:12px;}
+  .cover .title{font-size:128px;margin-top:22px;}
+  .cover .title .g{color:var(--green);}
+  .cover .sub{font-family:'Space Grotesk',sans-serif;font-size:31px;color:#b6bdca;max-width:800px;margin-top:32px;line-height:1.45;}
+  .tickerstrip{margin-top:auto;display:flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .tk{flex:1;padding:22px 24px;border-right:1px solid var(--line);}
+  .tk:last-child{border-right:none;}
+  .tk .sym{font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--mute);letter-spacing:.1em;}
+  .tk .val{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:30px;color:var(--green);margin-top:8px;}
+
+  /* the setup */
+  .big-claim{font-size:84px;margin-top:24px;}
+  .pull{font-family:'Space Grotesk',sans-serif;font-size:30px;line-height:1.5;color:#c0c7d4;margin-top:34px;max-width:900px;}
+
+  /* competitor card slides */
+  .rank{font-family:'Anton',sans-serif;font-size:300px;color:var(--panel2);position:absolute;right:40px;top:90px;z-index:1;line-height:.7;}
+  .co-name{font-family:'Anton',sans-serif;font-size:118px;text-transform:uppercase;line-height:.88;margin-top:40px;}
+  .co-tag{font-family:'JetBrains Mono',monospace;font-size:19px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);margin-top:18px;}
+  .stat-grid{margin-top:auto;display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line);}
+  .sg-row{display:flex;align-items:center;padding:24px 0;border-bottom:1px solid var(--line);}
+  .sg-row .k{font-family:'JetBrains Mono',monospace;font-size:17px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);width:300px;flex-shrink:0;}
+  .sg-row .v{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:40px;color:var(--paper);}
+  .sg-row .v.green{color:var(--green);}
+  .sg-row .v.amber{color:var(--amber);}
+  .sg-row .v small{font-size:22px;color:var(--mute);font-weight:500;}
+
+  /* podium / standings slide */
+  .podium{margin-top:46px;display:flex;flex-direction:column;gap:18px;}
+  .prow{display:flex;align-items:center;gap:26px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px 30px;position:relative;overflow:hidden;}
+  .prow .pos{font-family:'Anton',sans-serif;font-size:60px;width:70px;flex-shrink:0;}
+  .prow.first{border-color:var(--green);} .prow.first .pos{color:var(--green);}
+  .prow.second .pos{color:var(--cyan);}
+  .prow.third .pos{color:var(--amber);}
+  .prow .who{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:38px;}
+  .prow .det{font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--mute);margin-top:6px;}
+  .prow .num{margin-left:auto;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:38px;text-align:right;}
+  .prow.first .num{color:var(--green);}
+
+  /* bubble warning slide */
+  .mega{font-family:'Anton',sans-serif;font-size:200px;line-height:.8;margin-top:auto;}
+  .mega.red{color:var(--red);}
+  .megacap{font-family:'Space Grotesk',sans-serif;font-size:30px;color:#c0c7d4;margin-top:24px;max-width:860px;line-height:1.45;}
+  .megacap b{color:var(--amber);font-weight:600;}
+
+  /* takeaway */
+  .pts{margin-top:36px;display:flex;flex-direction:column;}
+  .pt{display:flex;gap:24px;align-items:baseline;padding:24px 0;border-top:1px solid var(--line);}
+  .pt:last-child{border-bottom:1px solid var(--line);}
+  .pt .n{font-family:'JetBrains Mono',monospace;font-size:19px;color:var(--green);flex-shrink:0;}
+  .pt .t{font-family:'Space Grotesk',sans-serif;font-size:28px;line-height:1.38;color:#dfe3ea;}
+  .pt .t b{color:var(--green);font-weight:600;}
+
+  /* cta */
+  .cta .big{font-size:104px;margin-top:24px;}
+  .cta .q{font-family:'Space Grotesk',sans-serif;font-size:30px;color:#b6bdca;margin-top:28px;max-width:820px;line-height:1.5;}
+  .cta .handle{margin-top:auto;font-family:'Anton',sans-serif;font-size:56px;color:var(--green);text-transform:uppercase;}
+  .cta .sub2{font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:.1em;color:var(--mute);margin-top:14px;text-transform:uppercase;}
+
+  @media (max-width:1140px){.slide{transform:scale(.84);transform-origin:top center;margin-bottom:-180px;}}
+  @media (max-width:920px){.slide{transform:scale(.62);margin-bottom:-420px;}}
+  @media (max-width:680px){.slide{transform:scale(.40);margin-bottom:-660px;}}
+</style>
+</head>
+<body>
+
+<div class="meta">The Scoreboard &middot; AI IPO Race &middot; 11 slides &middot; 1080&times;1080 &middot; export to PDF for LinkedIn</div>
+
+<!-- 1 COVER -->
+<div class="slide cover">
+  <div class="grid"></div>
+  <div class="glow" style="background:var(--green);top:-200px;right:-200px;"></div>
+  <div class="pad">
+    <div class="kicker"><span style="width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);"></span> Field Notes &middot; Markets</div>
+    <div class="anton title">THE<br><span class="g">SCOREBOARD</span></div>
+    <div class="sub">The biggest names in AI are sprinting toward the public markets at once. Here's who's where in the race to go public.</div>
+    <div class="tickerstrip">
+      <div class="tk"><div class="sym">OPENAI</div><div class="val">~$850B+</div></div>
+      <div class="tk"><div class="sym">ANTHROPIC</div><div class="val">~$350B+</div></div>
+      <div class="tk"><div class="sym">SPACEX / xAI</div><div class="val">~$1.75T</div></div>
+    </div>
+  </div>
+  <div class="footer"><span class="name">Tobi Smith-Kayode</span><span>Swipe &rarr;</span></div>
+</div>
+
+<!-- 2 THE SETUP -->
+<div class="slide">
+  <div class="grid"></div>
+  <div class="glow" style="background:var(--cyan);bottom:-350px;left:-250px;opacity:.12;"></div>
+  <div class="pad">
+    <div class="eyebrow"><span class="live"></span>The setup<span class="counter">01 / 09</span></div>
+    <h2 class="big-claim">Three giants.<br>One finish line.<br>A historic year.</h2>
+    <div class="pull">If even two of these debut in 2026, the combined raise could rival or exceed <strong>all US IPO proceeds</strong> from a typical year — in one wave. The race isn't just to go public. It's to go <span style="color:var(--cyan)">first</span>, and claim the investor spotlight.</div>
+  </div>
+  <div class="footer"><span class="name">Tobi Smith-Kayode</span><span>The Scoreboard &middot; AI IPO Race</span></div>
+</div>
+
+<!-- 3 SPACEX -->
+<div class="slide">
+  <div class="grid"></div>
+  <div class="rank">01</div>
+  <div class="pad">
+    <div class="eyebrow"><span class="live"></span>Furthest along<span class="counter">02 / 09</span></div>
+    <div class="co-name">SpaceX<br><span style="font-size:64px;color:var(--cyan);">+ xAI</span></div>
+    <div class="co-tag">Rockets, Starlink &amp; Musk's AI bet, merged</div>
+    <div class="stat-grid">
+      <div class="sg-row"><div class="k">Reported valuation</div><div class="v green">~$1.75T</div></div>
+      <div class="sg-row"><div class="k">Reported raise</div><div class="v">~$75B</div></div>
+      <div class="sg-row"><div class="k">Status</div><div class="v amber" style="font-size:30px;">S-1 PUBLIC &middot; ROADSHOW <small>(reported)</small></div></div>
+    </div>
+  </div>
+  <div class="footer"><span class="name">Tobi Smith-Kayode</span><span>The Scoreboard &middot; AI IPO Race</span></div>
+</div>
+
+<!-- 4 ANTHROPIC -->
+<div class="slide">
+  <div class="grid"></div>
+  <div class="rank">02</div>
+  <div class="pad">
+    <div class="eyebrow"><span class="live"></span>The enterprise play<span class="counter">03 / 09</span></div>
+    <div class="co-name">Anthropic</div>
+    <div class="co-tag">Claude &middot; safety-first, built for regulated industries</div>
+    <div class="stat-grid">
+      <div class="sg-row"><div class="k">Reported valuation</div><div class="v green">~$350B&ndash;$900B<small> (sources vary)</small></div></div>
+      <div class="sg-row"><div class="k">Run-rate revenue</div><div class="v">~$44B<small> annualized (reported)</small></div></div>
+      <div class="sg-row"><div class="k">Status</div><div class="v amber" style="font-size:30px;">CONFIDENTIAL FILING &middot; AIMING Q4</div></div>
+    </div>
+  </div>
+  <div class="footer"><span class="name">Tobi Smith-Kayode</span><span>The Scoreboard &middot; AI IPO Race</span></div>
+</div>
+
+<!-- 5 OPENAI -->
+<div class="slide">
+  <div class="grid"></div>
+  <div class="rank">03</div>
+  <div class="pad">
+    <div class="eyebrow"><span class="live"></span>The household name<span class="counter">04 / 09</span></div>
+    <div class="co-name">OpenAI</div>
+    <div class="co-tag">ChatGPT &middot; the biggest brand, the biggest burn</div>
+    <div class="stat-grid">
+      <div class="sg-row"><div class="k">Reported valuation</div><div class="v green">~$850B&ndash;$1T</div></div>
+      <div class="sg-row"><div class="k">Recent round</div><div class="v">~$122B<small> raised (reported)</small></div></div>
+      <div class="sg-row"><div class="k">Status</div><div class="v amber" style="font-size:30px;">FILED W/ SEC &middot; TARGETING Q4</div></div>
+    </div>
+  </div>
+  <div class="footer"><span class="name">Tobi Smith-Kayode</span><span>The Scoreboard &middot; AI IPO Race</span></div>
+</div>
+
+<!-- 6 STANDINGS -->
+<div class="slide">
+  <div class="grid"></div>
+  <div class="glow" style="background:var(--green);top:-200px;right:-200px;opacity:.12;"></div>
+  <div class="pad">
+    <div class="eyebrow"><span class="live"></span>Current standings<span class="counter">05 / 09</span></div>
+    <h2 style="font-size:56px;margin-top:14px;">Who's actually<br>winning the sprint?</h2>
+    <div class="podium">
+      <div class="prow first"><div class="pos">1</div><div><div class="who">SpaceX / xAI</div><div class="det">S-1 public, bank syndicate, roadshow reported</div></div><div class="num">FIRST OUT</div></div>
+      <div class="prow second"><div class="pos">2</div><div><div class="who">Anthropic &amp; OpenAI</div><div class="det">Both filed / pre-filing, both eyeing Q4</div></div><div class="num" style="color:var(--cyan);">PHOTO FINISH</div></div>
+      <div class="prow third"><div class="pos">?</div><div><div class="who">The wildcard</div><div class="det">Timelines slip — revenue misses & CFO caution reported</div></div><div class="num" style="color:var(--amber);">TBD</div></div>
+    </div>
+  </div>
+  <div class="footer"><span class="name">Tobi Smith-Kayode</span><span>The Scoreboard &middot; AI IPO Race</span></div>
+</div>
+
+<!-- 7 THE CATCH -->
+<div class="slide">
+  <div class="grid"></div>
+  <div class="glow" style="background:var(--red);bottom:-350px;right:-250px;opacity:.14;"></div>
+  <div class="pad">
+    <div class="eyebrow" style="color:var(--red);"><span class="live" style="background:var(--red);box-shadow:0 0 14px var(--red);"></span>The number nobody frames<span class="counter">06 / 09</span></div>
+    <h2 style="font-size:52px;margin-top:14px;max-width:840px;">One of these giants reportedly loses billions a year — while raising at near-trillion valuations.</h2>
+    <div class="mega red">$8.5B</div>
+    <div class="megacap">Reported annualized losses at the category leader against a fraction of that in revenue. The race to IPO is also a race to <b>find public money before the burn catches up.</b></div>
+  </div>
+  <div class="footer"><span class="name">Tobi Smith-Kayode</span><span>The Scoreboard &middot; AI IPO Race</span></div>
+</div>
+
+<!-- 8 WHY IT MATTERS -->
+<div class="slide">
+  <div class="grid"></div>
+  <div class="pad">
+    <div class="eyebrow"><span class="live"></span>Why it matters<span class="counter">07 / 09</span></div>
+    <h2 style="font-size:58px;margin-top:14px;">For the first time,<br>you might be able<br>to own a piece.</h2>
+    <div class="pull" style="margin-top:36px;">These have been private clubs for years. An IPO cracks the door for everyday investors — and sets the <span style="color:var(--cyan)">first real public benchmark</span> for what a pure-play AI company is worth. That number will ripple through every AI stock you already own.</div>
+  </div>
+  <div class="footer"><span class="name">Tobi Smith-Kayode</span><span>The Scoreboard &middot; AI IPO Race</span></div>
+</div>
+
+<!-- 9 TAKEAWAY -->
+<div class="slide">
+  <div class="grid"></div>
+  <div class="pad">
+    <div class="eyebrow"><span class="live"></span>The takeaway<span class="counter">08 / 09</span></div>
+    <h2 class="anton" style="font-size:84px;margin-top:14px;">SCORECARD,<br>FOUR LINES</h2>
+    <div class="pts">
+      <div class="pt"><span class="n">01</span><span class="t"><b>SpaceX/xAI leads</b> on process — furthest into the actual filing.</span></div>
+      <div class="pt"><span class="n">02</span><span class="t"><b>OpenAI vs. Anthropic is the real race</b> — both eyeing Q4, first-mover wins the spotlight.</span></div>
+      <div class="pt"><span class="n">03</span><span class="t"><b>The numbers conflict</b> — valuations move weekly; treat every figure as "reported."</span></div>
+      <div class="pt"><span class="n">04</span><span class="t"><b>Gold rush or bubble?</b> Huge raises, huge losses. Both can be true at once.</span></div>
+    </div>
+  </div>
+  <div class="footer"><span class="name">Tobi Smith-Kayode</span><span>The Scoreboard &middot; AI IPO Race</span></div>
+</div>
+
+<!-- 10 CTA -->
+<div class="slide cta">
+  <div class="grid"></div>
+  <div class="glow" style="background:var(--green);top:-200px;right:-200px;"></div>
+  <div class="pad">
+    <div class="eyebrow"><span class="live"></span>Your call</div>
+    <h2 class="anton big">WOULD YOU<br>BUY IN?</h2>
+    <div class="q">Generational gold rush, or the top of a bubble? If one of these listed tomorrow, would you put money in — or sit it out and watch?</div>
+    <div class="handle">Follow Tobi Smith-Kayode</div>
+    <div class="sub2">Delivery Lead &amp; Data Practitioner &middot; reading the AI board</div>
+  </div>
+  <div class="footer"><span class="name">Not financial advice</span><span>Repost &amp; save &rarr;</span></div>
+</div>
+
+</body>
+</html>
